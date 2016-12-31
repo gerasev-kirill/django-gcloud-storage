@@ -1,6 +1,7 @@
 import io
 import re
 import sys
+import os
 import tempfile
 from pprint import pprint
 
@@ -11,24 +12,38 @@ from gcloud import storage as gc_storage
 from gcloud import exceptions
 
 
+DJANGO_GCS_PRIVATE_KEY_PATH = getattr(settings, 'DJANGO_GCS_PRIVATE_KEY_PATH', None)
+DJANGO_GCS_BLOB_MAKE_PUBLIC = getattr(settings, 'DJANGO_GCS_BLOB_MAKE_PUBLIC', False)
+
+if not DJANGO_GCS_PRIVATE_KEY_PATH or \
+    not os.path.exists(DJANGO_GCS_PRIVATE_KEY_PATH):
+    raise Exception("Can't find DJANGO_GCS_PRIVATE_KEY_PATH(with full path to existing JSON key for authentication) variable in django.conf.settings")
+
+
+
+
 class GoogleCloudStorage(Storage):
-    def __init__(self, bucket_name=None, project=None, public=False):
-        client = gc_storage.Client()
-        self.bucket_name = (
-            bucket_name
-            if bucket_name
-            else settings.DJANGO_GCS_BUCKET
-        )
-        self.project = project if project else settings.DJANGO_GCS_PROJECT
-        self.public = public
+    def __init__(self, bucket_name=None, **kwargs):
+        self.bucket_name = bucket_name or getattr(settings, 'DJANGO_GCS_BUCKET', None)
+        self.client = gc_storage.Client()
+
+        ext = os.path.splitext(DJANGO_GCS_PRIVATE_KEY_PATH)[-1].lower()
+        if ext == '.json':
+            self.client.from_service_account_json(DJANGO_GCS_PRIVATE_KEY_PATH)
+        elif ext == '.p12':
+            self.client.from_service_account_p12(DJANGO_GCS_PRIVATE_KEY_PATH)
+        if kwargs.has_key('public'):
+            self.public = kwargs['public']
+        else:
+            self.public = DJANGO_GCS_BLOB_MAKE_PUBLIC
 
         try:
-            self.gc_bucket = client.get_bucket(self.bucket_name)
+            self.gc_bucket = self.client.get_bucket(self.bucket_name)
         except exceptions.NotFound:
             # if the bucket hasn't been created, create one
             # TODO: creating buckets here is not functional,
             # buckets won't be created.
-            self.gc_bucket = self.gc_connection.new_bucket(self.bucket_name)
+            self.gc_bucket = self.client.create_bucket(self.bucket_name)
         except oauth2client.client.AccessTokenRefreshError:
             # Temporarily ignore this exception
             # It causes 502 Bad Gateway on GCE,
@@ -109,7 +124,7 @@ class GoogleCloudStorage(Storage):
             return rtn
 
         # convert to string for speeding up
-        all_keys = [k.name for k in self.gc_bucket.get_all_keys()]
+        all_keys = [k.name for k in self.gc_bucket.list_blobs()]
         keys_under_path = extract_path(
             filter(lambda k: k.startswith(path), all_keys), path
         )

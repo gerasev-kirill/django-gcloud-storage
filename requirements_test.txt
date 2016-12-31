@@ -1,7 +1,3 @@
 -r requirements.txt
-Django
-coverage
-mock
-nose
-django-nose
+Django>=1.10
 pillow

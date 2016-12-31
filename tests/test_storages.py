@@ -40,19 +40,18 @@ Namespaces are one honking great idea -- let's do more of those!"""
         self.test_txt_path = 'misc/txt/python-zen.txt'
 
         # create a new bucket for testing purpose
-        self.test_connection = self.storage.gc_connection
+        self.test_connection = self.storage.client
         self.test_bucket = self.storage.gc_bucket
 
         # upload a fake data for checking download functionality
-        self.existed_file = self.test_bucket.new_key(self.test_existed_file_name)
+        self.existed_file = self.test_bucket.blob(self.test_existed_file_name)
         self.existed_file.upload_from_string(self.test_existed_file_content)
 
     def tearDown(self):
         # perform a clean up for restoring cloud storage
-        all_keys = self.test_bucket.get_all_keys()
-
-        keys_to_del = filter(lambda k: k.name.startswith("%s/" % self.test_folder_name), all_keys)
-#        map(lambda k: k.delete(), keys_to_del)
+        for blob in self.test_bucket.list_blobs():
+            if blob.name.startswith("%s/" % self.test_folder_name):
+                blob.delete()
 
 
     def test_save(self):
@@ -62,7 +61,7 @@ Namespaces are one honking great idea -- let's do more of those!"""
             new_name = self.storage.save('%s/test.txt' % self.test_folder_name, cf)
 
             # perform checking
-            new_key = self.test_bucket.get_key(new_name)
+            new_key = self.test_bucket.get_blob(new_name)
             self.assertTrue(new_key.exists())
 
 
@@ -73,14 +72,14 @@ Namespaces are one honking great idea -- let's do more of those!"""
 
 
     def test_url(self):
-        right_public_url = self.test_bucket.get_key(self.test_existed_file_name).public_url
+        right_public_url = self.test_bucket.get_blob(self.test_existed_file_name).public_url
         test_public_url = self.storage.url(self.test_existed_file_name)
 
         self.assertEqual(right_public_url, test_public_url)
 
 
     def test_size(self):
-        right_file_size = self.test_bucket.get_key(self.test_existed_file_name).size
+        right_file_size = self.test_bucket.get_blob(self.test_existed_file_name).size
         test_file_size = self.storage.size(self.test_existed_file_name)
 
         self.assertEqual(right_file_size, test_file_size)
@@ -88,7 +87,7 @@ Namespaces are one honking great idea -- let's do more of those!"""
 
     def test_listdir(self):
         def new_content(key):
-            new_key = self.test_bucket.new_key( "%s/%s" % (self.test_folder_name, key))
+            new_key = self.test_bucket.blob( "%s/%s" % (self.test_folder_name, key))
             new_key.upload_from_string('testing content')
 
         # upload structural data
@@ -111,4 +110,3 @@ Namespaces are one honking great idea -- let's do more of those!"""
         test_model_instance.save()
 
         # TODO: verify upload of both image and text files
-        

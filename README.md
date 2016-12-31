@@ -1,6 +1,4 @@
-#django-gcloud-storage [![Build Status](https://travis-ci.org/littleq0903/django-gcloud-storage.svg?branch=master)](https://travis-ci.org/littleq0903/django-gcloud-storage)
-
-Django Storage Backend on Google Cloud Storage with gcloud-python.
+# Django Storage Backend on Google Cloud Storage with gcloud-python
 
 This storage backend allows you to store your static content to Google Cloud Storage in your Django app, by using the latest python wrapper from Google, `gcloud-python`.
 
@@ -19,7 +17,7 @@ pip install .
 
 ## Install to Your Django App
 
-To enable this as your default file storage backend, you have to specify **django_gcs** as your default storage backend.
+To enable this as your default file storage backend, you have to specify **django_gcs** as your default storage backend. Also you should provide full path to \*.json or \*.p12 key with Google Cloud Storage service account credential(how to create key read [here](https://cloud.google.com/storage/docs/authentication#generating-a-private-key))
 
 ```python
 # .../settings.py
@@ -27,6 +25,9 @@ To enable this as your default file storage backend, you have to specify **djang
 ...
 
 DEFAULT_FILE_STORAGE = 'django_gcs.storage.GoogleCloudStorage'
+DJANGO_GCS_PRIVATE_KEY_PATH = '/full/path/to/my-key.json'
+# if you want make all your files public(by default - False)
+DJANGO_GCS_BLOB_MAKE_PUBLIC = True
 
 ```
 

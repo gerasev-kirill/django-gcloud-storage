@@ -1,11 +1,14 @@
 import sys
 import os
-
-from optparse import OptionParser
+import django
 
 from django.conf import settings
+from django.core.management import call_command
 
-project_root = os.path.dirname(os.path.abspath(__file__))
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 try:
     test_settings = {
@@ -14,7 +17,7 @@ try:
         'DATABASES': {
             'default': {
                 'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': os.path.join(os.path.dirname(__file__), 'test.db'),
+                'NAME': os.path.join(BASE_DIR, 'test.db'),
             }
         },
 
@@ -39,25 +42,13 @@ try:
 except ImportError:
     raise ImportError('run `pip install -r requirements_test.txt to install testing dependencies.')
 
-try:
-    import test_secrets
+import test_secrets
 
-    gcs_settings = {
-        'DJANGO_GCS_PROJECT': test_secrets.DJANGO_GCS_PROJECT,
-        'DJANGO_GCS_BUCKET': test_secrets.DJANGO_GCS_BUCKET
-    }
 
-except ImportError:
-
-    if 'DJANGO_GCS_PROJECT' not in os.environ:
-        raise Exception('please provide Google Cloud Credentials in eithor environment vars or test_secrets.py')
-
-    gcs_settings = {
-        'DJANGO_GCS_PROJECT': os.environ['DJANGO_GCS_PROJECT'],
-        'DJANGO_GCS_CLIENT_EMAIL': os.environ['DJANGO_GCS_CLIENT_EMAIL'],
-        'DJANGO_GCS_PRIVATE_KEY_PATH': os.environ['DJANGO_GCS_PRIVATE_KEY_PATH'],
-        'DJANGO_GCS_BUCKET': os.environ['DJANGO_GCS_BUCKET']
-    }
+gcs_settings = {
+    'DJANGO_GCS_BUCKET': getattr(test_secrets, 'DJANGO_GCS_BUCKET', None),
+    'DJANGO_GCS_PRIVATE_KEY_PATH': getattr(test_secrets, 'DJANGO_GCS_PRIVATE_KEY_PATH', None)
+}
 
 
 all_settings = {}
@@ -66,27 +57,21 @@ all_settings.update(gcs_settings)
 
 settings.configure(**all_settings)
 
-import django
-django.setup()
-
-from django.core.management import call_command
-call_command('syncdb', migrate=True)
-
-from django_nose import NoseTestSuiteRunner
-
-def run_tests(*args):
-    if not args:
-        args = ['tests']
-
-    test_runner = NoseTestSuiteRunner(verbosity=1)
-
-    failures = test_runner.run_tests(args)
-
-    if failures:
-        sys.exit(failures)
 
 
-if __name__ == '__main__':
-    parser = OptionParser()
-    (options, args) = parser.parse_args()
-    run_tests(*args)
+
+if django.VERSION[0] == 1 and django.VERSION[1] <= 8:
+    call_command('syncdb', migrate=True)
+    from django.test.simple import DjangoTestSuiteRunner
+    test_runner = DjangoTestSuiteRunner(verbosity=1)
+else:
+    django.setup()
+    call_command('migrate', migrate=True)
+    from django.test.runner import DiscoverRunner
+    test_runner = DiscoverRunner(verbosity=1)
+
+
+
+failures = test_runner.run_tests(['tests'])
+if failures:
+    sys.exit(failures)

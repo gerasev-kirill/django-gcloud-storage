@@ -1,6 +1,9 @@
 # Project Specific
+/.virtualenv
+/key.json
+/ap2
+/test.db
 /test.key
-/test_secrets.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
