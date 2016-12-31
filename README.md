@@ -9,7 +9,7 @@ This storage backend allows you to store your static content to Google Cloud Sto
 Currently you have to install it manually due to active development, I haven't publish it onto pip yet.
 
 ```shell
-git clone https://github.com/littleq0903/django-gcloud-storage.git
+git clone https://github.com/gerasev-kirill/django-gcloud-storage
 cd django-gcloud-storage
 pip install -r requirements.txt
 pip install .

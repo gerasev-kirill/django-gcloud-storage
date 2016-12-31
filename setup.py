@@ -14,7 +14,7 @@ setup_options = {
 
         'license': 'MIT',
         'description': open('./README.md').read(),
-        'url': 'https://github.com/littleq0903/django-gcloud-storage',
+        'url': 'https://github.com/gerasev-kirill/django-gcloud-storage',
 
         'classifiers': [
             'Environment :: Web Environment',

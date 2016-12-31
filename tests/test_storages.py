@@ -1,3 +1,4 @@
+import os
 from django.test import TestCase
 from django.core.files import File
 from django.core.files.base import ContentFile
@@ -103,10 +104,25 @@ Namespaces are one honking great idea -- let's do more of those!"""
 
 
     def test_filefield(self):
+        dirs, files = self.storage.listdir(self.test_folder_name+'/misc/txt')
+        self.assertEquals(len(dirs), 0)
+        self.assertEquals(len(files), 0)
+
+        dirs, files = self.storage.listdir(self.test_folder_name+'/misc/img')
+        self.assertEquals(len(dirs), 0)
+        self.assertEquals(len(files), 0)
+
 
         test_model_instance = TestModel.objects.create()
         test_model_instance.image_file = ImageFile(open(self.test_img_path))
-        test_model_instance.text_file = ContentFile(open(self.test_txt_path))
+        test_model_instance.text_file = File(open(self.test_txt_path))
         test_model_instance.save()
 
-        # TODO: verify upload of both image and text files
+
+        dirs, files = self.storage.listdir(self.test_folder_name+'/misc/txt')
+        self.assertEquals(len(dirs), 0)
+        self.assertEquals(files, [os.path.basename(self.test_txt_path)])
+
+        dirs, files = self.storage.listdir(self.test_folder_name+'/misc/img')
+        self.assertEquals(len(dirs), 0)
+        self.assertEquals(files, [os.path.basename(self.test_img_path)])
