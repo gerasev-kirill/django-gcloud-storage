@@ -8,8 +8,8 @@ from pprint import pprint
 import oauth2client.client
 from django.core.files.storage import Storage
 from django.conf import settings
-from gcloud import storage as gc_storage
-from gcloud import exceptions
+from google.cloud import storage as gc_storage
+from google.cloud import exceptions
 
 
 DJANGO_GCS_PRIVATE_KEY_PATH = getattr(settings, 'DJANGO_GCS_PRIVATE_KEY_PATH', None)

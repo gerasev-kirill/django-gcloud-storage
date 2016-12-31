@@ -6,7 +6,7 @@ setup_options = {
         'version': django_gcs.__version__,
         'install_requires': [
             'Django>=1.10',
-            'gcloud==0.18.3'
+            'google-cloud==0.22.0'
         ],
 
         'author': 'Colin Su',
