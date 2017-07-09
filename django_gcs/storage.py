@@ -26,7 +26,6 @@ if not DJANGO_GCS_PRIVATE_KEY_PATH or \
 class GoogleCloudStorage(Storage):
     def __init__(self, bucket_name=None, **kwargs):
         self.bucket_name = bucket_name or getattr(settings, 'DJANGO_GCS_BUCKET', None)
-        self.client = gc_storage.Client
 
         ext = os.path.splitext(DJANGO_GCS_PRIVATE_KEY_PATH)[-1].lower()
         if ext == '.json':
@@ -36,8 +35,10 @@ class GoogleCloudStorage(Storage):
                 'GOOGLE_CLOUD_PROJECT',
                 data.get('project_id', '')
             )
+            self.client = gc_storage.Client()
             self.client.from_service_account_json(DJANGO_GCS_PRIVATE_KEY_PATH)
         elif ext == '.p12':
+            self.client = gc_storage.Client()
             self.client.from_service_account_p12(DJANGO_GCS_PRIVATE_KEY_PATH)
         if kwargs.has_key('public'):
             self.public = kwargs['public']
