@@ -3,6 +3,7 @@ import re
 import sys
 import os
 import tempfile
+import json
 from pprint import pprint
 
 import oauth2client.client
@@ -25,10 +26,16 @@ if not DJANGO_GCS_PRIVATE_KEY_PATH or \
 class GoogleCloudStorage(Storage):
     def __init__(self, bucket_name=None, **kwargs):
         self.bucket_name = bucket_name or getattr(settings, 'DJANGO_GCS_BUCKET', None)
-        self.client = gc_storage.Client()
+        self.client = gc_storage.Client
 
         ext = os.path.splitext(DJANGO_GCS_PRIVATE_KEY_PATH)[-1].lower()
         if ext == '.json':
+            with open(DJANGO_GCS_PRIVATE_KEY_PATH) as f:
+                data = json.load(f)
+            os.environ['GOOGLE_CLOUD_PROJECT'] = os.environ.get(
+                'GOOGLE_CLOUD_PROJECT',
+                data.get('project_id', '')
+            )
             self.client.from_service_account_json(DJANGO_GCS_PRIVATE_KEY_PATH)
         elif ext == '.p12':
             self.client.from_service_account_p12(DJANGO_GCS_PRIVATE_KEY_PATH)
